@@ -5,6 +5,5 @@
 	<classpathentry kind="lib" path="lib/MyArray.jar"/>
 	<classpathentry kind="lib" path="lib/gurobi.jar"/>
 	<classpathentry kind="lib" path="lib/commons-math3-3.6.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RpHND_GRB"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

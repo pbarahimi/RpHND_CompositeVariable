@@ -6,8 +6,9 @@ public class Route implements Comparable<Route>{
 	public final Node k;
 	public final Node m;
 	public final Node j;
-	public final double cost;
-	public final double value;
+	public final double cost; // the route-cost regardless of failure probabilities
+	public final double expCost; // expected cost of the route
+	public final double value;	// the route-cost considering the failure probability of the hubs
 	public GRBVar var;
 	
 	/**
@@ -24,7 +25,8 @@ public class Route implements Comparable<Route>{
 		this.m = m;
 		this.j = j;
 		this.cost = getRouteCost ( alpha );
-		this.value = this.cost * 1 - ( ( 1 - k.failure ) * ( 1 - m.failure ) );
+		this.expCost = getExpCost ( alpha );
+		this.value = getValue();
 	}
 	
 	/**
@@ -37,6 +39,7 @@ public class Route implements Comparable<Route>{
 		this.k = other.k;
 		this.m = other.m;
 		this.cost = other.cost;
+		this.expCost = other.expCost;
 		this.value = other.value;		
 	}
 	
@@ -56,6 +59,41 @@ public class Route implements Comparable<Route>{
 		return output;		
 	}
 	
+	private double getExpCost ( double alpha ){
+		double output = this.cost;
+		/*if ( !k.equals(m) ) {
+			if ( i.equals(k) && !j.equals(m)) //iimj
+				output *= (1-i.failure) * (1-m.failure) * (1-j.failure);
+			else if ( !i.equals(k) && j.equals(m) )  //ikjj
+				output *= (1-i.failure) * (1-k.failure) * (1-j.failure);
+			else if ( !i.equals(k) && !j.equals(m) ) //ikmj
+				output *= (1-i.failure) * (1-k.failure) * (1-m.failure) *(1-j.failure);
+			else //iijj
+				output *= (1-i.failure) * (1-j.failure);
+		} else {
+			if ( !i.equals(k) && !j.equals(m) ) //ikkj
+				output *= (1-i.failure) * (1-k.failure) * (1-j.failure);
+			else //iiij or ijjj
+				output *= (1-i.failure) * (1-j.failure);
+		}*/
+		if ( !k.equals(m) ) {
+			if ( i.equals(k) && !j.equals(m)) //iimj
+				output *= 1 - m.failure;
+			else if ( !i.equals(k) && j.equals(m) )  //ikjj
+				output *= 1 - k.failure;
+			else if ( !i.equals(k) && !j.equals(m) ) //ikmj
+				output *= 1 - k.failure * m.failure;
+			else //iijj
+				output *= 1;
+		} else {
+			if ( !i.equals(k) && !j.equals(m) ) //ikkj
+				output *= 1 - k.failure;
+			else //iiij or ijjj
+				output *= 1;
+		}
+		return output;
+	}
+	
 	/**
 	 * returns the Euclidean distance between the two nodes considering
 	 * the discount factor if the two nodes are hubs.
@@ -69,9 +107,29 @@ public class Route implements Comparable<Route>{
 		return coefficient * (Math.sqrt(Math.pow(n1.x - n2.x, 2) + Math.pow(n1.y - n2.y, 2)));
 	}
 	
+	private double getValue(){
+		/*double output = this.cost;
+		if ( !k.equals(m) ) {
+			if ( i.equals(k) && !j.equals(m)) //iimj
+				output *= m.failure;
+			else if ( !i.equals(k) && j.equals(m) )  //ikjj
+				output *= k.failure;
+			else if ( !i.equals(k) && !j.equals(m) ) //ikmj
+				output *= k.failure + m.failure;
+			else //iijj
+				output *= 0.0001;
+		} else {
+			if ( !i.equals(k) && !j.equals(m) ) //ikkj
+				output *= k.failure;
+			else //iiij or ijjj
+				output *= 0.0001;
+		}*/
+		return this.expCost;
+	}
+	
 	@Override
 	public String toString(){
-		return "(" + this.i + "," + this.k + "," + this.m + "," + this.j + ") - " + this.cost + "-" + this.value ;
+		return "(" + this.i + "," + this.k + "," + this.m + "," + this.j + ") - " + this.cost +/* "-" + this.value + */"-" +this.expCost;
 	}
 	
 	@Override

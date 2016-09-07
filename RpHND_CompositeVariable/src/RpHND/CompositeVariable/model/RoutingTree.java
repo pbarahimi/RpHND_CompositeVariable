@@ -12,12 +12,12 @@ public class RoutingTree {
 		usedHubs = new NodeList[size];
 	}
 	
-	public void updateValue(){
-		this.value = this.routes[0].value;
-		for (int i = 1 ; i < 3 ; i++){
+	public void updateValue(){		
+		this.value = this.routes[0].expCost;
+		for (int i = 1 ; i < routes.length ; i++){
 			if (this.routes[i] != null)
-				this.value += this.routes[i].value * getFailureProb(i);
-		}		
+				this.value += this.routes[i].cost * getFailureProb(i);
+		}	
 	}
 	
 	private double getFailureProb(int i ){

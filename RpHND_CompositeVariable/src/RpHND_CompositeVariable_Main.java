@@ -29,10 +29,9 @@ public class RpHND_CompositeVariable_Main {
 	private static double[][] flows = new double[nVar][nVar];
 	private static final double[][]	fixedCosts = MyArray.read("fixedcharge.txt");
 	private static final int P = 3;
-	private static final int D = 2; //maximum number of failures
+	private static final int D = 1; //maximum number of failures
 	private static final double alpha = 0.2;
 	private static final long M = CombinatoricsUtils.binomialCoefficient(nVar-1, P-1); // big M
-	
 	private static ArrayList<Node> nodes = new ArrayList<Node>();
 	private static Route[][][][] routes = new Route[nVar][nVar][nVar][nVar];
 	private static List<HubComb> hubCombs = new ArrayList<HubComb>();
@@ -48,10 +47,8 @@ public class RpHND_CompositeVariable_Main {
 			}
 		}
 		
-		
-
 		// build Gurobi model and environment.
-		GRBEnv env = new GRBEnv("RpHND.log");
+		GRBEnv env = new GRBEnv(null);
 		GRBModel model = new GRBModel(env);
 				
 		// initializing node objects.
@@ -80,7 +77,7 @@ public class RpHND_CompositeVariable_Main {
 			for (int j = i+1 ; j < nVar ; j++){
 				for ( int k = 0 ; k < hubCombs.size() ; k++ ){
 					routingTrees[i][j][k] = getRoutingTree(nodes.get(i), nodes.get(j), hubCombs.get(k).hubs, D);
-					x[i][j][k] = model.addVar(0, 1, routingTrees[i][j][k].value, GRB.CONTINUOUS, "x" + i + "_" + j + "_" + k);
+					x[i][j][k] = model.addVar(0, 1, flows[i][j] * routingTrees[i][j][k].value, GRB.CONTINUOUS, "x" + i + "_" + j + "_" + k);
 				}
 			}
 		}
@@ -133,27 +130,27 @@ public class RpHND_CompositeVariable_Main {
 		
 		System.out.println("Elapsed Time: " + (System.currentTimeMillis()-start) );
 		
-		RpHND_GRB_Main.printSol(model);
+		printSol(model);
 		
-		/*for ( int  i = 0 ; i < nVar ; i++ ){
+		for ( int  i = 0 ; i < nVar ; i++ ){
 			for (int j = i+1 ; j < nVar ; j++){
-				System.out.println(routingTrees[i][j][0]);
+				System.out.println(routingTrees[i][j][42]);
 			}
-		}*/
+		}
 		
-//		for (HubComb h : hubCombs)
-//			System.out.println(h);
+		/*for (HubComb h : hubCombs)
+			System.out.println(h);*/
 	}
 	
 	private static RoutingTree getRoutingTree(Node i, Node j, List<Node> hList, int l){
-		// checking if i and j are included in the hubsList.
-		if ( hList.contains(i) )
-			i.isHub = true;
-		if ( hList.contains(j) )
-			j.isHub = true;
+		// Update the nodes in the hubsList by setting the isHub to true
+		for ( Node n : hList )
+			n.isHub = true;
 		
 		// instantiating the output
 		RoutingTree output = new RoutingTree( (int) Math.pow(2, l+1) - 1  );
+		
+		// generating list of feasible routes between the origin and the destination.
 		PriorityQueue<Route> feasibleRoutes = new PriorityQueue<Route>();
 		if (i.isHub && j.isHub){
 			if ( routes[i.ID][i.ID][j.ID][j.ID] == null )
@@ -206,7 +203,9 @@ public class RpHND_CompositeVariable_Main {
 			PriorityQueue<Route> feasibleRoutes1 = new PriorityQueue<Route>(feasibleRoutes); // List of feasible routes to select left child node from.
 			PriorityQueue<Route> feasibleRoutes2 = new PriorityQueue<Route>(feasibleRoutes); // List of feasible routes to select right child node from.
 			
-			if ( !output.routes[0].i.equals(output.routes[0].k) && output.routes[cntr] != null && !isFinal(output.routes[cntr]) ){
+			if ( !output.routes[cntr].i.equals(output.routes[cntr].k) 
+					&& output.routes[cntr] != null 
+					&& !isFinal(output.routes[cntr]) ){ 
 				ArrayList<Node> usedHubs1 = new ArrayList<Node>(output.usedHubs[cntr].list);  // make a list of parent node's used hubs.
 				usedHubs1.add(output.routes[cntr].k); // adding parent node's first hub to the list
 				int leftNodeIndex = 2*cntr + 1;
@@ -221,7 +220,10 @@ public class RpHND_CompositeVariable_Main {
 				}
 			}
 			
-			if ( !output.routes[0].j.equals(output.routes[0].m) && output.routes[cntr] != null && !isFinal(output.routes[cntr]) ) {
+			if ( !output.routes[cntr].j.equals(output.routes[cntr].m) 
+					&& output.routes[cntr] != null 
+					&& !isFinal(output.routes[cntr]) 
+					&& !output.routes[cntr].k.equals(output.routes[cntr].m)) {
 				ArrayList<Node> usedHubs2 = new ArrayList<Node>(output.usedHubs[cntr].list);  // make a list of parent node's used hubs.
 				usedHubs2.add(output.routes[cntr].m); // adding parent node's first hub to the list
 				int rightNodeIndex = 2*cntr + 2;
@@ -237,11 +239,11 @@ public class RpHND_CompositeVariable_Main {
 			cntr++;
 		}
 		
-		// switching i and j back to spokes
-		i.isHub = false;
-		j.isHub = false;
+		// switching node is hubList back to spokes
+		for ( Node n : hList )
+			n.isHub = false;
 		
-		// updating the vlaue of the tree
+		// updating the value of the tree
 		output.updateValue();
 		
 		return output;
@@ -293,5 +295,18 @@ public class RpHND_CompositeVariable_Main {
 	            processLargerSubsets(set, subset, subsetSize + 1, j + 1, hubCombs, fixedCosts);
 	        }
 	    }
+	}
+	
+	/**
+	 * Prints the basic variables.s
+	 * @param model
+	 * @throws GRBException
+	 */
+	static void printSol (GRBModel model) throws GRBException{
+		for (GRBVar var : model.getVars() ){
+			double value = var.get(GRB.DoubleAttr.X);
+			if ( value != 0 )
+				System.out.println( var.get(GRB.StringAttr.VarName) + ": " + value + ": " + var.get(GRB.DoubleAttr.Obj));
+		}
 	}
 }
