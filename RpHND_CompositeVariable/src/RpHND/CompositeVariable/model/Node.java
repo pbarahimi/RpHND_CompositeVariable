@@ -1,25 +1,24 @@
 package RpHND.CompositeVariable.model;
-import javax.print.attribute.standard.MediaSize.Other;
 
 public class Node {
 	public final int ID;
-	public final double x;
-	public final double y;
+	public double x;
+	public double y;
 	public final double failure;
 	public boolean isHub = false;
 
-	public Node(int ID, double x, double y, double failure) {
+	public Node(int ID, /*double x, double y, */double failure) {
 		this.ID = ID;
-		this.x = x;
-		this.y = y;
+//		this.x = x;
+//		this.y = y;
 		this.failure = failure;
 	}
 
 	// copy constructor
 	public Node(Node other) {
 		this.ID = other.ID;
-		this.x = other.x;
-		this.y = other.y;
+//		this.x = other.x;
+//		this.y = other.y;
 		this.isHub = other.isHub;
 		this.failure = other.failure;
 	}

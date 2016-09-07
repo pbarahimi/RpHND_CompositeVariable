@@ -22,11 +22,12 @@ import gurobi.GRBModel;
 import gurobi.GRBVar;
 
 public class RpHND_CompositeVariable_Main {
-	private static final double[][] coordinates = MyArray.read("coordinates.txt");
-	private static final double[][] tmpFlows = MyArray.read("w.txt");
+//	private static final double[][] coordinates = MyArray.read("coordinates.txt");
+//	private static final double[][] tmpFlows = MyArray.read("w.txt");
 	private static final double[][] failures = MyArray.read("failures.txt");
-	private static int nVar = tmpFlows.length;
-	private static double[][] flows = new double[nVar][nVar];
+	private static final double[][] distances = MyArray.read("distances.txt");
+	private static int nVar = failures.length;
+	private static double[][] flows = MyArray.read("flows.txt");//new double[nVar][nVar];
 	private static final double[][]	fixedCosts = MyArray.read("fixedcharge.txt");
 	private static final int P = 3;
 	private static final int D = 1; //maximum number of failures
@@ -41,11 +42,11 @@ public class RpHND_CompositeVariable_Main {
 		double start = System.currentTimeMillis();
 		
 		// Filling in the flows matrix assymetrically
-		for (int i = 0; i < nVar; i++) {
+		/*for (int i = 0; i < nVar; i++) {
 			for (int j = 0; j < nVar; j++) {
 				flows[i][j] = tmpFlows[i][j] + tmpFlows[j][i];
 			}
-		}
+		}*/
 		
 		// build Gurobi model and environment.
 		GRBEnv env = new GRBEnv(null);
@@ -53,8 +54,8 @@ public class RpHND_CompositeVariable_Main {
 				
 		// initializing node objects.
 		GRBVar[] y = new GRBVar[nVar];
-		for (int i = 0 ; i < coordinates.length ; i++){
-			nodes.add(new Node(i, coordinates[i][0], coordinates[i][1], failures[i][0]));
+		for (int i = 0 ; i < nVar ; i++){
+			nodes.add(new Node(i, /*coordinates[i][0], coordinates[i][1],*/ failures[i][0]));
 			y[i] = model.addVar(0, 1, fixedCosts[i][0], GRB.BINARY, "y"+i );
 		}
 		
@@ -130,13 +131,13 @@ public class RpHND_CompositeVariable_Main {
 		
 		System.out.println("Elapsed Time: " + (System.currentTimeMillis()-start) );
 		
-		printSol(model);
+		/*printSol(model);
 		
 		for ( int  i = 0 ; i < nVar ; i++ ){
 			for (int j = i+1 ; j < nVar ; j++){
 				System.out.println(routingTrees[i][j][42]);
 			}
-		}
+		}*/
 		
 		/*for (HubComb h : hubCombs)
 			System.out.println(h);*/
@@ -154,18 +155,18 @@ public class RpHND_CompositeVariable_Main {
 		PriorityQueue<Route> feasibleRoutes = new PriorityQueue<Route>();
 		if (i.isHub && j.isHub){
 			if ( routes[i.ID][i.ID][j.ID][j.ID] == null )
-				routes[i.ID][i.ID][j.ID][j.ID] = new Route(i, i, j, j, alpha);
+				routes[i.ID][i.ID][j.ID][j.ID] = new Route(i, i, j, j, distances, alpha);
 			feasibleRoutes.add( routes[i.ID][i.ID][j.ID][j.ID] );
 		} else if (i.isHub){
 			for (Node n : hList){
 				if ( routes[i.ID][i.ID][n.ID][j.ID] == null )
-					routes[i.ID][i.ID][n.ID][j.ID] = new Route(i, i, n, j, alpha);
+					routes[i.ID][i.ID][n.ID][j.ID] = new Route(i, i, n, j, distances, alpha);
 				feasibleRoutes.add(routes[i.ID][i.ID][n.ID][j.ID]);
 			}
 		} else if (j.isHub){
 			for (Node n : hList){
 				if ( routes[i.ID][n.ID][j.ID][j.ID] == null )
-					routes[i.ID][n.ID][j.ID][j.ID] = new Route(i, n, j, j, alpha);
+					routes[i.ID][n.ID][j.ID][j.ID] = new Route(i, n, j, j, distances, alpha);
 				feasibleRoutes.add(routes[i.ID][n.ID][j.ID][j.ID]);
 			}
 		} else {
@@ -173,8 +174,8 @@ public class RpHND_CompositeVariable_Main {
 				for ( int v = u ; v < hList.size() ; v++ ){
 					if ( routes[i.ID][hList.get(u).ID][hList.get(v).ID][j.ID] == null  
 						&& routes[i.ID][hList.get(v).ID][hList.get(u).ID][j.ID] == null ){
-						Route r1 = new Route(i, hList.get(u), hList.get(v), j, alpha);
-						Route r2 = new Route(i, hList.get(v), hList.get(u), j, alpha);
+						Route r1 = new Route(i, hList.get(u), hList.get(v), j, distances, alpha);
+						Route r2 = new Route(i, hList.get(v), hList.get(u), j, distances, alpha);
 						if (r1.value <= r2.value){
 							routes[r1.i.ID][r1.k.ID][r1.m.ID][r1.j.ID] = r1;
 							feasibleRoutes.add(r1);

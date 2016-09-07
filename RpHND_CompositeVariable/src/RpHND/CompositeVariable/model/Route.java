@@ -19,12 +19,12 @@ public class Route implements Comparable<Route>{
 	 * @param load
 	 * @param alpha
 	 */
-	public Route ( Node i, Node k, Node m, Node j, double alpha ){
+	public Route ( Node i, Node k, Node m, Node j, double[][] distances, double alpha ){
 		this.i = i;
 		this.k = k;
 		this.m = m;
 		this.j = j;
-		this.cost = getRouteCost ( alpha );
+		this.cost = getRouteCost ( distances, alpha );
 		this.expCost = getExpCost ( alpha );
 		this.value = getValue();
 	}
@@ -51,10 +51,10 @@ public class Route implements Comparable<Route>{
 	 * @param alpha
 	 * @return
 	 */
-	private double getRouteCost( double alpha ){
-		double output = getDistance(i, k, alpha);
-		output += getDistance(k, m, alpha);
-		output += getDistance (m, j, alpha);	
+	private double getRouteCost( double[][] distances, double alpha ){
+		double output = getDistance(i, k, distances, alpha);
+		output += getDistance(k, m, distances, alpha);
+		output += getDistance (m, j, distances, alpha);	
 //		System.out.println(load.origin + "_" + hub1 + "_" + hub2 + "_" + load.destination + ": " + output);
 		return output;		
 	}
@@ -101,10 +101,10 @@ public class Route implements Comparable<Route>{
 	 * @param n2
 	 * @return
 	 */
-	private double getDistance (Node n1, Node n2, double alpha ){
+	private double getDistance (Node n1, Node n2, double[][] distances, double alpha ){
 		double coefficient = 1;
 		if (n1.isHub && n2.isHub) coefficient = 1 - alpha;
-		return coefficient * (Math.sqrt(Math.pow(n1.x - n2.x, 2) + Math.pow(n1.y - n2.y, 2)));
+		return coefficient * distances[n1.ID][n2.ID];//(Math.sqrt(Math.pow(n1.x - n2.x, 2) + Math.pow(n1.y - n2.y, 2)));
 	}
 	
 	private double getValue(){
