@@ -1,18 +1,3 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.PriorityQueue;
-
-import org.apache.commons.math3.util.Combinations;
-import org.apache.commons.math3.util.CombinatoricsUtils;
-import org.apache.commons.math3.util.MathUtils;
-
-import RpHND.CompositeVariable.model.HubComb;
-import RpHND.CompositeVariable.model.Node;
-import RpHND.CompositeVariable.model.NodeList;
-import RpHND.CompositeVariable.model.Route;
-import RpHND.CompositeVariable.model.RoutingTree;
 import gurobi.GRB;
 import gurobi.GRBConstr;
 import gurobi.GRBEnv;
@@ -20,6 +5,19 @@ import gurobi.GRBException;
 import gurobi.GRBLinExpr;
 import gurobi.GRBModel;
 import gurobi.GRBVar;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.PriorityQueue;
+
+import org.apache.commons.math3.util.CombinatoricsUtils;
+
+import RpHND.CompositeVariable.model.HubComb;
+import RpHND.CompositeVariable.model.Node;
+import RpHND.CompositeVariable.model.NodeList;
+import RpHND.CompositeVariable.model.Route;
+import RpHND.CompositeVariable.model.RoutingTree;
 
 public class RpHND_CompositeVariable_Main {
 //	private static final double[][] coordinates = MyArray.read("coordinates.txt");
@@ -29,7 +27,7 @@ public class RpHND_CompositeVariable_Main {
 	private static int nVar = failures.length;
 	private static double[][] flows = MyArray.read("flows.txt");//new double[nVar][nVar];
 	private static final double[][]	fixedCosts = MyArray.read("fixedcharge.txt");
-	private static final int P = 3;
+	private static final int P = 5;
 	private static final int D = 1; //maximum number of failures
 	private static final double alpha = 0.2;
 	private static final long M = CombinatoricsUtils.binomialCoefficient(nVar-1, P-1); // big M
