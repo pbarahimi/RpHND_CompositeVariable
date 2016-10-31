@@ -40,7 +40,11 @@ public class RpHND_CompositeVariable_Main {
 	private static List<HubComb> hubCombs;
 
 	public static void main(String[] args) throws GRBException, IOException {
-		int[] Instance = {0,1,2,3,4,5,6,7,8,9};
+		String path = "Z:/documents/";
+		File file = new File(path + "results.txt");
+		FileWriter fw = new FileWriter(file);
+		
+		int[] Instance = {0,1,2,3,4};
 		int[] N = {10,15,20,25};
 		int[] hub = {3,5,7};
 		double[] discount = {0.2};
@@ -55,31 +59,33 @@ public class RpHND_CompositeVariable_Main {
 				"01-20",
 				"01-25"				
 		};
-		int[] L = {2,3,4};
+		int[] L = {2,3,4}; 
 		
-		for(int n : N){
-			for (int h : hub){
-				for (double d : discount){
-					for (String s:failure){
-						for (int l : L){
+		for (int l : L){
+			for(int n : N){
+				for (int h : hub){
+					for (double d : discount){
+						for (String s:failure){
 							for (int i:Instance){
 								if (l<h)
-									run(n, h, d, s, l, i);	
+									fw.append(run(n, h, d, s, l, i) + "\r\n");	
 							}
 						}
 					}
 				}
 			}
 		}
+		fw.close();
 	}
-
-	private static void run(int N, int hub, double discount, String failure, int l, int instance) throws GRBException, IOException {
-		double start = System.currentTimeMillis();
-		failures = MyArray.read("Datasets/ExperimentData/Failures/" + failure + "/failures.txt");
-		distances = MyArray.read("Datasets/ExperimentData/" + N + "nodes/Distances_" + N + "_" + instance + ".txt");
+	
+	
+	private static String run(int N, int hub, double discount, String failure, int l, int instance) throws GRBException, IOException {
+		double startTime = System.currentTimeMillis();
+		failures = MyArray.read("Datasets/ExperimentData2/Failures/" + failure + "/failures.txt");
+		distances = MyArray.read("Datasets/ExperimentData2/" + N + "nodes/distances_" + N + "_" + instance + ".txt");
 		nVar = distances.length;
-		flows = MyArray.read("Datasets/ExperimentData/" + N + "nodes/Flows" + N + "_" + instance + ".txt");
-		fixedCosts = MyArray.read("Datasets/ExperimentData/fixedcharge.txt");
+		flows = MyArray.read("Datasets/ExperimentData2/" + N + "nodes/Flows" + N + "_" + instance + ".txt");
+		fixedCosts = MyArray.read("Datasets/ExperimentData2/fixedcharge.txt");
 		P = hub;
 		D = l; // maximum number of failures
 		alpha = discount;
@@ -169,7 +175,8 @@ public class RpHND_CompositeVariable_Main {
 				}
 			}
 		}
-
+		double buildTime = System.currentTimeMillis() - startTime;
+		startTime = System.currentTimeMillis();
 		// solve model
 		model.optimize();
 		
@@ -188,11 +195,23 @@ public class RpHND_CompositeVariable_Main {
 				System.out.print(var.get(GRB.StringAttr.VarName)+" ");
 			}			
 		}
-
+		
+		// saving the results into file
+		String output = "";
+		output += N+","+P+","+discount+","+failure+","+l+",Obj:,"+model.get(GRB.DoubleAttr.ObjVal)+",hubs:,";
+		for (GRBVar var : model.getVars()){
+			if (var.get(GRB.DoubleAttr.X)!=0 && var.get(GRB.StringAttr.VarName).contains("y")){
+				output += var.get(GRB.StringAttr.VarName)+ " ";
+			}
+		}
+		System.out.print(",Solution Time:,"
+				+ (System.currentTimeMillis() - startTime));
+		System.out.println(",Build Time:," + buildTime);
+		output += ",Solution Time:,"
+				+ (System.currentTimeMillis() - startTime) + ",Build Time:," + buildTime;
 		model.dispose();
 		env.dispose();
-		System.out.println(",Elapsed Time:,"
-				+ (System.currentTimeMillis() - start));
+		return output;		
 	}
 
 	private static RoutingTree getRoutingTree(Node i, Node j, List<Node> hList,
